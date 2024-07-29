@@ -1,0 +1,84 @@
+﻿@namespace Blazr.App.UI.Mud
+
+@inject IMudGridListPresenter<DmoWeatherForecast> Presenter
+@inject IDialogService DialogService
+
+<MudDataGrid T="DmoWeatherForecast" Context="record" ServerData="this.Presenter.GetItemsAsync" @ref="_grid">
+    <ToolBarContent>
+        <MudText Typo="Typo.h4">Weather Forecasts</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Default" @onclick="this.OnAddAsync" />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Sortable="false" Property="x => x.WeatherForecastId.Value.ToDisplayId()" Title="Id" />
+        <PropertyColumn Sortable="true" Property="x => x.Date" Format="dd-MMM-yy" Title="Date" />
+        <PropertyColumn Property="x => x.Temperature.TemperatureC" Format="N0" Title="Temperature C" />
+        <PropertyColumn Property="x => x.Temperature.TemperatureF" Format="N0" Title="Temperature F" />
+        <PropertyColumn Sortable="true" Property="x => x.Summary" Title="Summary" />
+        <TemplateColumn CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.TableView" @onclick="() => this.OnView(context.Item.WeatherForecastId)"></MudIconButton>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" @onclick="() => this.OnEdit(context.Item.WeatherForecastId)"></MudIconButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="DmoWeatherForecast" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private MudDataGrid<DmoWeatherForecast>? _grid;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _grid is not null)
+            await _grid.SetSortAsync("Date", SortDirection.Ascending, x => x.Date);
+    }
+
+    private async Task OnView(WeatherForecastId id)
+    {
+        // Build out the parameters
+        var parameters = new DialogParameters() { { "WeatherForecastId", id } };
+        var options = new DialogOptions { CloseOnEscapeKey = true, FullWidth = true };
+
+        // open the dialog.  It's read only so there's no mutation and no need to update the grid
+        _ = await DialogService.ShowAsync<WeatherForecastViewForm>("View Weather Forecast", parameters, options);
+    }
+
+    private async Task OnEdit(WeatherForecastId id)
+    {
+        // Build out the parameters and options locking the backdrop
+        var parameters = new DialogParameters() { { "WeatherForecastId", id } };
+        var options = new DialogOptions { DisableBackdropClick = true, CloseOnEscapeKey = false, FullWidth = true };
+
+        // get the dialog reference and await the result
+        var dialog = await DialogService.ShowAsync<WeatherForecastEditForm>("Edit Weather Forecast", parameters, options);
+        var result = await dialog.Result;
+
+        // If not cancelled then relaod the grid as the record will have been mutated
+        if (!result.Canceled && _grid is not null)
+            await _grid.ReloadServerData();
+    }
+
+    //TODO - Got to here
+    private async Task OnAddAsync()
+    {
+        // Create a "New" id
+        var id = WeatherForecastId.NewEntity;
+
+        // Build out the parameters and options locking the backdrop
+        var parameters = new DialogParameters() { { "WeatherForecastId", id } };
+        var options = new DialogOptions { DisableBackdropClick = true, CloseOnEscapeKey = false, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<WeatherForecastEditForm>("Add Weather Forecast", parameters, options);
+        var result = await dialog.Result;
+
+        // If not cancelled then relaod the grid as the record will have been mutated
+        if (!result.Canceled && _grid is not null)
+            await _grid.ReloadServerData();
+    }
+}

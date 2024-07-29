@@ -1,0 +1,65 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@namespace Blazr.App.UI.Mud
+@inject IViewPresenter<DmoWeatherForecast, WeatherForecastId> Presenter
+
+<MudDialog>
+    <DialogContent>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudField Label="Date" Variant="Variant.Filled">
+                    @this.Presenter.Item.Date.ToString("dd-MMM-yy")
+                </MudField>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudField Label="Summary" Variant="Variant.Filled">
+                    @this.Presenter.Item.Summary
+                </MudField>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudField Label="Temperature &deg;C" Variant="Variant.Filled">
+                    @this.Presenter.Item.Temperature.TemperatureC.ToString("N0")
+                </MudField>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudField Label="Temperature &deg;F" Variant="Variant.Filled">
+                    @this.Presenter.Item.Temperature.TemperatureF.ToString("N0")
+                </MudField>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid>
+            <MudItem xs="12" lg="8">
+                <MudField Label="Full Id" Variant="Variant.Filled">
+                    @this.Presenter.Item.WeatherForecastId.Value.ToString()
+                </MudField>
+            </MudItem>
+        </MudGrid>
+
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Icon="@Icons.Material.Filled.Close" Color="Color.Primary" OnClick="this.Close">
+            Exit
+        </MudButton>
+    </DialogActions>
+
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [Parameter] public WeatherForecastId WeatherForecastId { get; set; } = default!;
+
+    protected async override Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(WeatherForecastId);
+        await this.Presenter.LoadAsync(this.WeatherForecastId);
+    }
+
+    private void Close()
+        => MudDialog?.Close(DialogResult.Ok(true));
+}
+
